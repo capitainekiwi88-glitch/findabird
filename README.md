@@ -17,3 +17,9 @@ Dernier rapport* : 25/09/26
 
 * ./rapports/rapport_******
 
+--------------------------------------------------
+
+How to get started : 
+- Get into the repository
+- "npm install"
+- "npx expo start"
