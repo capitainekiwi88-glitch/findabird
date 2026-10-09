@@ -13,7 +13,7 @@ En cours de développement ...
 
 --------------------------------------------------
 
-Dernier rapport* : 25/09/26
+Dernier rapport* : 09/10/26
 
 * ./rapports/rapport_******
 
@@ -23,3 +23,8 @@ How to get started :
 - Get into the repository
 - "npm install"
 - "npx expo start"
+
+--------------------------------------------------
+
+Linked API : 
+github.com/capitainekiwi88-glitch/birder-api // Hosted on Render
