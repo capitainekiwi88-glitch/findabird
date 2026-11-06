@@ -23,8 +23,12 @@ How to get started :
 - Get into the repository
 - "npm install"
 - "npx expo start"
+// WARNING : INTERFACE ONLY
 
---------------------------------------------------
+If you want a 100% functional version : 
+- "npx expo prebuild --plateform android"
+- "npx expo run:android"
 
-Linked API : 
-github.com/capitainekiwi88-glitch/birder-api // Hosted on Render
+Make sure to have Android Studio (and your phone plugged in)
+& to have ANDROID_HOME & JAVA_HOME in your envs.
+
