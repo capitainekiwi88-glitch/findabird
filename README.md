@@ -21,11 +21,13 @@ Dernier rapport* : 15/10/2026
 
 Comment démarrer : 
 - Se placer dans un répertoire vide
-- "npm install"
-- "npx expo start" // SEULEMENT POUR LES INTERFACES
+- ``npm install``
+- ``npx expo start`` // SEULEMENT POUR LES INTERFACES
 
 Pour un fonctionnement complet :
-- "npx expo prebuild --plateform android"
-- "npx expo run:android"
- 
+- ``py -m pip install birder onnx onnxruntime``    // installation de l'onnx birder
+- ``py -m birder.tools convert-model -n mobilenet_v3_large_1_0 -t il-common --onnx`` // installer l'IA
+- ``py export_assets.py``                  // préparation des fichier assets manquants
+- ``npx expo prebuild --platform android`` // préparer le build pour l'application
+- ``npx expo run:android``                  // lancer l'installation avec Android Studio
 ANDROID_HOME et JAVA_HOME doivent être présents dans les variables d'environnements de votre machine.
