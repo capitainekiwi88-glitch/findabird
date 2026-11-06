@@ -19,12 +19,13 @@ Dernier rapport* : 15/10/2026
 
 --------------------------------------------------
 
-How to get started : 
-- Get into the repository
+Comment démarrer : 
+- Se placer dans un répertoire vide
 - "npm install"
-- "npx expo start"
+- "npx expo start" // SEULEMENT POUR LES INTERFACES
 
---------------------------------------------------
-
-Linked API : 
-github.com/capitainekiwi88-glitch/birder-api // Hosted on Render
+Pour un fonctionnement complet :
+- "npx expo prebuild --plateform android"
+- "npx expo run:android"
+ 
+ANDROID_HOME et JAVA_HOME doivent être présents dans les variables d'environnements de votre machine.
