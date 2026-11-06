@@ -1,176 +1,188 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import * as FileSystem from 'expo-file-system/legacy';
-
-import { useColors } from '@/hooks/use-color-scheme';
-
-// À REMPLACER par l'adresse de ton API (Render ou Hugging Face)
-const API_URL = 'https://birder-api.onrender.com';
-
-type Prediction = { species: string; confidence: number };
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { CameraView, useCameraPermissions } from "expo-camera";
+import * as ImagePicker from "expo-image-picker";
+import { router } from "expo-router";
+import { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+// async pour éviter un crash en période de test !
+async function getModel() {
+  return await import("@/lib/birdModel");
+}
+type Result = { species: string; score: number };
 
 export default function IdentifierScreen() {
-  const colors = useColors();
-  const [uri, setUri] = useState<string | null>(null);
-  const [results, setResults] = useState<Prediction[]>([]);
+  const [permission, requestPermission] = useCameraPermissions();
+  const cameraRef = useRef<CameraView>(null);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [results, setResults] = useState<Result[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const analyze = async (photoUri: string) => {
+  useEffect(() => {
+    getModel()
+      .then((m) => m.loadModel())
+      .catch((e) => console.warn("Modèle indisponible :", e));
+  }, []);
+
+  async function analyse(uri: string) {
+    setPhotoUri(uri);
     setLoading(true);
-    setError(null);
-    setResults([]);
-
-    // Version gratuit donc peut prendre du temps
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 90_000);
-
     try {
-      const uploadUrl = `${API_URL}/predict`;
-
-      const upload = await FileSystem.uploadAsync(uploadUrl, photoUri, {
-        httpMethod: 'POST',
-        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-        fieldName: 'file',
-        mimeType: 'image/jpeg',
-        headers: {
-          Accept: 'application/json',
-        },
-      });
-
-      if (upload.status < 200 || upload.status >= 300) {
-        throw new Error(`HTTP ${upload.status} : ${upload.body}`);
-      }
-
-      const data = JSON.parse(upload.body);
-      setResults(data.predictions);
-      
-
-      
-      } catch (e: any) {
-        console.error('Erreur analyse photo :', e);
-        setError(e.message ?? String(e));
-      } finally {
-      clearTimeout(timeout);
+      const m = await getModel();
+      setResults(await m.identify(uri));
+    } catch (e) {
+      console.warn(e);
+      setResults([
+        { species: "TEST (IA indisponible dans Expo Go le temps du dev interface)", score: 0.99 },
+      ]);
+    } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const pick = async (fromCamera: boolean) => {
-    const permission = fromCamera
-      ? await ImagePicker.requestCameraPermissionsAsync()
-      : await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      setError("Autorisation refusée. Active-la dans les réglages du téléphone.");
-      return;
-    }
+  async function takePhoto() {
+    const photo = await cameraRef.current?.takePictureAsync({ quality: 0.8 });
+    if (photo) await analyse(photo.uri);
+  }
 
-    const result = fromCamera
-      ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.7 })
-      : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 });
-    if (result.canceled) return;
+  async function pickFromGallery() {
+    const pick = await ImagePicker.launchImageLibraryAsync({ quality: 0.8 });
+    if (!pick.canceled) await analyse(pick.assets[0].uri);
+  }
 
-    const photoUri = result.assets[0].uri;
-    setUri(photoUri);
-    analyze(photoUri);
-  };
+  function reset() {
+    setPhotoUri(null);
+    setResults([]);
+  }
 
-  return (
-    <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* En-tête */}
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8}>
-            <Ionicons name="chevron-back" size={26} color={colors.text} />
-          </Pressable>
-          <Text style={[styles.title, { color: colors.text }]}>Qui est-ce ?</Text>
-        </View>
+  if (!permission) return <View />;
+  if (!permission.granted) {
+    return (
+      <SafeAreaView style={styles.center}>
+        <Text style={styles.text}>L'accès à la caméra est nécessaire.</Text>
+        <Pressable style={styles.btn} onPress={requestPermission}>
+          <Text style={styles.btnText}>Autoriser la caméra</Text>
+        </Pressable>
+      </SafeAreaView>
+    );
+  }
 
-        {/* Boutons */}
-        <View style={styles.buttons}>
-          <Pressable style={[styles.button, { backgroundColor: colors.primary }]} onPress={() => pick(true)}>
-            <Ionicons name="camera-outline" size={18} color="#FFFFFF" />
-            <Text style={styles.buttonText}>Photo</Text>
-          </Pressable>
-          <Pressable style={[styles.button, { backgroundColor: colors.primary }]} onPress={() => pick(false)}>
-            <Ionicons name="images-outline" size={18} color="#FFFFFF" />
-            <Text style={styles.buttonText}>Galerie</Text>
-          </Pressable>
-        </View>
-
-        {/* Aperçu */}
-        {uri && <Image source={{ uri }} style={styles.preview} resizeMode="cover" />}
-
-        {/* Chargement */}
-        {loading && (
-          <View style={styles.center}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>
-              Analyse en cours… la première fois, ça peut prendre jusqu'à une minute.
-            </Text>
-          </View>
-        )}
-
-        {/* Erreur */}
-        {error && <Text style={{ color: colors.accent }}>{error}</Text>}
-
-        {/* Résultats */}
-        {results.length > 0 && (
-          <View style={[styles.card, { backgroundColor: colors.surface }]}>
-            {results.map((p, index) => (
-              <View key={p.species} style={styles.result}>
-                <View style={styles.resultTop}>
-                  <Text style={[styles.species, { color: colors.text, fontSize: index === 0 ? 17 : 14 }]}>
-                    {p.species}
-                  </Text>
-                  <Text style={[styles.percent, { color: colors.textSecondary }]}>
-                    {(p.confidence * 100).toFixed(1)} %
-                  </Text>
-                </View>
-                <View style={[styles.barBg, { backgroundColor: colors.backgroundElement }]}>
-                  <View
-                    style={[
-                      styles.barFill,
-                      { backgroundColor: colors.primary, width: `${Math.max(p.confidence * 100, 2)}%` },
-                    ]}
-                  />
-                </View>
-              </View>
+  // Écran résultat
+  if (photoUri) {
+    const best = results[0];
+    return (
+      <SafeAreaView style={styles.result}>
+        <Image source={{ uri: photoUri }} style={styles.preview} />
+        {loading && <ActivityIndicator size="large" />}
+        {!loading && best && (
+          <View style={styles.card}>
+            {best.score < 0.5 && (
+              <Text style={styles.warning}>
+                Je ne suis pas sûr. Essayez une photo plus nette ou plus proche.
+              </Text>
+            )}
+            {results.map((r) => (
+              <Text key={r.species} style={styles.line}>
+                {r.species} : {(r.score * 100).toFixed(0)} %
+              </Text>
             ))}
           </View>
         )}
-      </ScrollView>
-    </SafeAreaView>
+        <Pressable style={styles.btn} onPress={reset}>
+          <Text style={styles.btnText}>Nouvelle photo</Text>
+        </Pressable>
+      </SafeAreaView>
+    );
+  }
+
+  // Écran caméra
+  return (
+    <View style={styles.flex}>
+      <CameraView ref={cameraRef} style={styles.flex} facing="back" />
+      <View style={styles.overlay} pointerEvents="none">
+        <View style={styles.frame} />
+        <Text style={styles.hint}>Placez l'oiseau dans le cadre</Text>
+      </View>
+      <SafeAreaView style={styles.controls} edges={["bottom"]}>
+        <Pressable onPress={() => router.back()} hitSlop={12}>
+          <Ionicons name="close" size={30} color="#fff" />
+        </Pressable>
+        <Pressable onPress={takePhoto} style={styles.shutter} />
+        <Pressable onPress={pickFromGallery} hitSlop={12}>
+          <Ionicons name="images-outline" size={30} color="#fff" />
+        </Pressable>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingBottom: 40, gap: 16 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  title: { fontSize: 26, fontWeight: '800' },
-  buttons: { flexDirection: 'row', gap: 10 },
-  button: {
+  flex: { flex: 1, backgroundColor: "#000" },
+  center: {
     flex: 1,
-    height: 48,
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 16,
+    padding: 24,
   },
-  buttonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
-  preview: { width: '100%', height: 260, borderRadius: 20 },
-  center: { alignItems: 'center', gap: 10, paddingVertical: 12 },
-  card: { borderRadius: 20, padding: 16, gap: 14 },
-  result: { gap: 6 },
-  resultTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  species: { fontWeight: '700', flexShrink: 1 },
-  percent: { fontSize: 13 },
-  barBg: { height: 8, borderRadius: 4, overflow: 'hidden' },
-  barFill: { height: 8, borderRadius: 4 },
+  text: { fontSize: 16 },
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  frame: {
+    width: "88%",
+    aspectRatio: 1,
+    borderWidth: 2,
+    borderColor: "#fff",
+    borderRadius: 24,
+  },
+  hint: { color: "#fff", marginTop: 16, fontSize: 14 },
+  controls: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    paddingBottom: 16,
+  },
+  shutter: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#fff",
+    borderWidth: 4,
+    borderColor: "#ccc",
+  },
+  result: { flex: 1, padding: 20, gap: 16 },
+  preview: { width: "100%", aspectRatio: 1, borderRadius: 20 },
+  card: {
+    padding: 16,
+    borderRadius: 16,
+    gap: 6,
+    backgroundColor: "rgba(128,128,128,0.15)",
+  },
+  warning: { fontWeight: "600", marginBottom: 6 },
+  line: { fontSize: 17 },
+  btn: {
+    backgroundColor: "#2e7d32",
+    padding: 14,
+    borderRadius: 14,
+    alignItems: "center",
+  },
+  btnText: { color: "#fff", fontWeight: "700", fontSize: 16 },
 });

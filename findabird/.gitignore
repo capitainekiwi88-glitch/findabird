@@ -9,6 +9,12 @@ dist/
 web-build/
 expo-env.d.ts
 
+# generated model exports
+/assets_out/
+/assets/bird.onnx
+/assets/labels.json
+/assets/model_config.json
+
 # Native
 .kotlin/
 *.orig.*

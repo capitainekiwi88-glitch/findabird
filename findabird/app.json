@@ -17,13 +17,26 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.anonymous.findabird"
     },
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "onnxruntime-react-native",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "L'application utilise la caméra pour identifier les oiseaux."
+        }
+      ],
+      "./plugins/withOnnxruntimePackage",
       "expo-router",
       [
         "expo-splash-screen",
@@ -32,7 +45,8 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,
