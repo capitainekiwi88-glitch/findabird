@@ -19,16 +19,13 @@ Dernier rapport* : 15/10/2026
 
 --------------------------------------------------
 
-How to get started : 
-- Get into the repository
+Comment démarrer : 
+- Se placer dans un répertoire vide
 - "npm install"
-- "npx expo start"
-// WARNING : INTERFACE ONLY
+- "npx expo start" // SEULEMENT POUR LES INTERFACES
 
-If you want a 100% functional version : 
+Pour un fonctionnement complet :
 - "npx expo prebuild --plateform android"
 - "npx expo run:android"
-
-Make sure to have Android Studio (and your phone plugged in)
-& to have ANDROID_HOME & JAVA_HOME in your envs.
-
+ 
+ANDROID_HOME et JAVA_HOME doivent être présents dans les variables d'environnements de votre machine.
