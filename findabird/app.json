@@ -29,6 +29,12 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "L'application utilise votre position pour afficher les oiseaux à proximité."
+        }
+      ],
       "onnxruntime-react-native",
       [
         "expo-camera",
