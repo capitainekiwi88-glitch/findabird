@@ -19,15 +19,42 @@ Dernier rapport* : 15/10/2026
 
 --------------------------------------------------
 
-Comment démarrer : 
-- Se placer dans un répertoire vide
-- ``npm install``
-- ``npx expo start`` // SEULEMENT POUR LES INTERFACES
+# 1. Configuration unique (Windows & Android)
 
-Pour un fonctionnement complet :
-- ``py -m pip install birder onnx onnxruntime``    // installation de l'onnx birder
-- ``py -m birder.tools convert-model -n mobilenet_v3_large_1_0 -t il-common --onnx`` // installer l'IA
-- ``py export_assets.py``                  // préparation des fichier assets manquants
-- ``npx expo prebuild --platform android`` // préparer le build pour l'application
-- ``npx expo run:android``                  // lancer l'installation avec Android Studio
-ANDROID_HOME et JAVA_HOME doivent être présents dans les variables d'environnements de votre machine.
+1. **Outils à installer :** **Git**, **Node.js (LTS)** et **Android Studio** (laisser l'installation par défaut du SDK).
+2. **Dans Android Studio** (*Settings → Languages & Frameworks → Android SDK → SDK Tools*, cocher *Show Package Details*), installer :
+   - `Android SDK Platform-Tools` & `Build-Tools`
+   - `NDK (Side by side)`
+   - `CMake 3.31.6` (obligatoire pour gérer les chemins longs)
+3. **Variables d'environnement Windows (Utilisateur) :**
+   - `ANDROID_HOME` = `C:\Users\<toi>\AppData\Local\Android\Sdk`
+   - `JAVA_HOME` = `C:\Program Files\Android\Android Studio\jbr`
+   - Ajouter `C:\Users\<username>\AppData\Local\Android\Sdk\platform-tools` au `Path`
+4. **Activer les chemins longs Windows** (PowerShell en **Administrateur**, puis redémarrer le PC) :
+   ```powershell
+   New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
+   git config --global core.longpaths true
+   New-Item -ItemType Directory -Force "$env:USERPROFILE\.gradle" | Out-Null
+   Add-Content "$env:USERPROFILE\.gradle\gradle.properties" "android.cmakeVersion=3.31.6"
+   ```
+5. **Téléphone Android :** Activer le **débogage USB** (Options développeur) et accepter l'autorisation au branchement (`adb devices` doit afficher `device`).
+
+---
+
+# 2. Installation et lancement
+
+> **Important :** Cloner dans un dossier très court sans espaces (`C:\fab`), sinon la compilation C++ peut échouer.
+
+```powershell
+git clone <URL-du-depot> C:\fab
+cd C:\fab
+npm install
+```
+*(Applique automatiquement les patchs ONNX via `postinstall`.)*
+
+### Première compilation (10 à 25 min)
+Téléphone branché et déverrouillé :
+```powershell
+npx expo prebuild --clean --platform android
+npx expo run:android
+```
