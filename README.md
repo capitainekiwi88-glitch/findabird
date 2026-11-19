@@ -19,7 +19,7 @@ Dernier rapport* : 15/10/2026
 
 --------------------------------------------------
 
-1. Configuration unique (Windows & Android)
+Configuration unique (Windows & Android)
 
 1. **Outils à installer :** **Git**, **Node.js (LTS)** et **Android Studio** (laisser l'installation par défaut du SDK).
 2. **Dans Android Studio** (*Settings → Languages & Frameworks → Android SDK → SDK Tools*, cocher *Show Package Details*), installer :
@@ -41,7 +41,7 @@ Dernier rapport* : 15/10/2026
 
 ---
 
-2. Installation et lancement
+Installation et lancement
 
 > **Important :** Cloner dans un dossier très court sans espaces (`C:\fab`), sinon la compilation C++ peut échouer.
 
